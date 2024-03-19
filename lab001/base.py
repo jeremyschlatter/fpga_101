@@ -39,8 +39,10 @@ module = Module()
 
 # Create a counter and blink a led
 counter = Signal(27)
+seconds = Signal(3)
+module.comb += led.eq(seconds[0])
 module.sync += If(counter == 100_000_000,
-                  led.eq(~led),
+                  seconds.eq(seconds + 1),
                   counter.eq(0),
                   ).Else(counter.eq(counter + 1))
 
