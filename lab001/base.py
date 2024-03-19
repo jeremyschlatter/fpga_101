@@ -38,10 +38,13 @@ led = platform.request("user_led")
 module = Module()
 
 # Create a counter and blink a led
-counter = Signal(26)
-module.comb += led.eq(counter[25])
-module.sync += counter.eq(counter + 1)
+counter = Signal(27)
+module.sync += If(counter == 100_000_000,
+                  led.eq(~led),
+                  counter.eq(0),
+                  ).Else(counter.eq(counter + 1))
 
 # Build --------------------------------------------------------------------------------------------
 
-platform.build(module)
+if __name__ == '__main__':
+    platform.build(module)
