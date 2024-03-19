@@ -45,23 +45,20 @@ _switches = [
     "V10",
 ]
 
-_io = [
-    ("user_btn", 0, Pins("N17"), IOStandard("LVCMOS33")),
+_io = {
+    "user_btn": "N17",
+    "clk100": "E3",
+    "cpu_reset": "C12",
+    "rgb_r": "N16",
+    "rgb_g": "R11",
+    "rgb_b": "G14",
+}
 
-    ("clk100", 0, Pins("E3"), IOStandard("LVCMOS33")),
+_io = [(n, 0, p) for (n, p) in _io.items()] +\
+        [("user_led", i, p) for (i, p) in enumerate(_leds)] +\
+        [("user_sw", i, p) for (i, p) in enumerate(_switches)]
 
-    ("cpu_reset", 0, Pins("C12"), IOStandard("LVCMOS33")),
-
-    ("rgb_r", 0, Pins("N16"), IOStandard("LVCMOS33")),
-    ("rgb_g", 0, Pins("R11"), IOStandard("LVCMOS33")),
-    ("rgb_b", 0, Pins("G14"), IOStandard("LVCMOS33")),
-]
-
-_io += [("user_led", i, Pins(p), IOStandard("LVCMOS33"))
-        for (i, p) in enumerate(_leds)]
-
-_io += [("user_sw", i, Pins(p), IOStandard("LVCMOS33"))
-        for (i, p) in enumerate(_switches)]
+_io = [(n, i, Pins(p), IOStandard("LVCMOS33")) for (n, i, p) in _io]
 
 # Platform -----------------------------------------------------------------------------------------
 
