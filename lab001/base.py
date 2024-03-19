@@ -47,16 +47,20 @@ module = Module()
 # Create a counter and blink a led
 counter = Signal(27)
 quarter_seconds = Signal(3)
+pwm = Signal(4)
 module.comb += [
     led.eq(quarter_seconds[2]),
-    rgb_r.eq(quarter_seconds[2]),
-    rgb_g.eq(quarter_seconds[1]),
-    rgb_b.eq(quarter_seconds[0]),
+    rgb_r.eq(quarter_seconds[2] & (pwm == 0)),
+    rgb_g.eq(quarter_seconds[1] & (pwm == 0)),
+    rgb_b.eq(quarter_seconds[0] & (pwm == 0)),
 ]
-module.sync += If(counter == 25_000_000,
-                  quarter_seconds.eq(quarter_seconds + 1),
-                  counter.eq(0),
-                  ).Else(counter.eq(counter + 1))
+module.sync += [
+    If(counter == 25_000_000,
+        quarter_seconds.eq(quarter_seconds + 1),
+        counter.eq(0),
+        ).Else(counter.eq(counter + 1)),
+    pwm.eq(pwm + 1),
+]
 
 # Build --------------------------------------------------------------------------------------------
 
