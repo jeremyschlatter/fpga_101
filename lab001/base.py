@@ -73,8 +73,6 @@ class Platform(XilinxPlatform):
 
 # Create our platform (fpga interface)
 platform = Platform()
-leds = platform.request_all("user_led")
-switches = platform.request_all("user_sw")
 rgb_r = platform.request("rgb_r")
 rgb_g = platform.request("rgb_g")
 rgb_b = platform.request("rgb_b")
@@ -86,8 +84,11 @@ module = Module()
 counter = Signal(27)
 quarter_seconds = Signal(3)
 pwm = Signal(4)
+for i in range(16):
+    led = platform.request("user_led", i)
+    switch = platform.request("user_sw", i)
+    module.comb += led.eq(~switch if i < 8 else switch)
 module.comb += [
-    leds.eq(switches),
     rgb_r.eq(quarter_seconds[2] & (pwm == 0)),
     rgb_g.eq(quarter_seconds[1] & (pwm == 0)),
     rgb_b.eq(quarter_seconds[0] & (pwm == 0)),
