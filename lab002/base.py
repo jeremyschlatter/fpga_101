@@ -64,10 +64,14 @@ platform = Platform()
 # Create our main module (fpga description)
 class Clock(Module):
     sys_clk_freq = int(100e6)
-    def __init__(self, led):
+    def __init__(self, led, disp_abcdefg):
+    # def __init__(self, led, disp_n, disp_abcdefg):
         # -- TO BE COMPLETED --
         # Tick generation : timebase
         self.submodules.tick = Tick(Clock.sys_clk_freq, 1)
+
+        counter = Signal(4)
+        self.submodules.disp = SevenSegment()
 
         # SevenSegmentDisplay
 
@@ -81,6 +85,10 @@ class Clock(Module):
 
         # combinatorial assignement
         self.comb += [
+            self.disp.value.eq(counter),
+            # disp_n.eq(0),
+            disp_abcdefg.eq(~self.disp.abcdefg),
+
             # Connect tick to core (core timebase)
 
             # Set minutes/hours
@@ -100,9 +108,14 @@ class Clock(Module):
 
         self.sync += [
             If(self.tick.ce, led.eq(~led)),
+            If(self.tick.ce, counter.eq(counter + 1)),
         ]
 
-module = Clock(platform.request("user_led"))
+module = Clock(
+    platform.request("user_led"),
+    # platform.request("display_cs_n"),
+    platform.request("display_abcdefg"),
+)
 
 # Build --------------------------------------------------------------------------------------------
 
