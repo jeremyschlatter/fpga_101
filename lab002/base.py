@@ -64,9 +64,11 @@ platform = Platform()
 # Create our main module (fpga description)
 class Clock(Module):
     sys_clk_freq = int(100e6)
-    def __init__(self):
+    def __init__(self, led):
         # -- TO BE COMPLETED --
         # Tick generation : timebase
+        tick = Tick(Clock.sys_clk_freq, 1)
+        self.submodules += tick
 
         # SevenSegmentDisplay
 
@@ -97,7 +99,11 @@ class Clock(Module):
         ]
         # -- TO BE COMPLETED --
 
-module = Clock()
+        self.sync += [
+            If(tick.ce, led.eq(~led)),
+        ]
+
+module = Clock(platform.request("user_led"))
 
 # Build --------------------------------------------------------------------------------------------
 
