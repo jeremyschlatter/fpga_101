@@ -46,11 +46,11 @@ class SevenSegment(Module):
 # SevenSegmentDisplay ------------------------------------------------------------------------------
 
 class SevenSegmentDisplay(Module):
-    def __init__(self, sys_clk_freq, cs_period=0.001):
+    def __init__(self, sys_clk_freq, cs_period=0.001, digits=8):
         # Module's interface
-        self.values = Array(Signal(5) for i in range(6))  # input
+        self.values = Array(Signal(5) for i in range(digits))  # input
 
-        self.cs = Signal(6)      # output
+        self.cs = Signal(digits) # output
         self.abcdefg = Signal(7) # output
 
         # # #
@@ -63,42 +63,34 @@ class SevenSegmentDisplay(Module):
         # Create a tick every cs_period
         self.submodules.tick = Tick(sys_clk_freq, cs_period)
 
-        # Rotate cs 6 bits signals to alternate seven segments
-		# cycle 0 : 0b000001
-	    # cycle 1 : 0b000010
-	    # cycle 2 : 0b000100
-	    # cycle 3 : 0b001000
-	    # cycle 4 : 0b010000
-	    # cycle 5 : 0b010000
-	    # cycle 6 : 0b100000
-		# cycle 7 : 0b000001
-        cs = Signal(6, reset=0b000001)
+        # Rotate cs <digits> bits signals to alternate seven segments
+        # cycle 0 : 0b..000001
+        # cycle 1 : 0b..000010
+        # cycle 2 : 0b..000100
+        # cycle 3 : 0b..001000
+        # cycle 4 : 0b..010000
+        # cycle 5 : 0b..100000
+        # ..
+        # cycle n : 0b..000001
+        cs = Signal(digits, reset=1)
         # Synchronous assigment
         self.sync += [
             If(self.tick.ce,
-                # -- TO BE COMPLETED --
-                # [...] rotate cs
-                cs.eq((cs << 1) | (cs == 0b100000)),
-                # -- TO BE COMPLETED --
+                # rotate cs
+                cs.eq((cs << 1) | (cs == (1 << (digits - 1)))),
             )
         ]
         # Combinatorial assigment
         self.comb += self.cs.eq(cs)
 
         # cs to value selection.
-        # Here we create a table to translate each of the 8 cs possible values
+        # Here we create a table to translate each of the <digits> cs possible values
         # to input value selection.
-        # -- TO BE COMPLETED --
         cases = {
-            0b000001 : seven_segment.value.eq(self.values[0]),
-            0b000010 : seven_segment.value.eq(self.values[1]),
-            0b000100 : seven_segment.value.eq(self.values[2]),
-            0b001000 : seven_segment.value.eq(self.values[3]),
-            0b010000 : seven_segment.value.eq(self.values[4]),
-            0b100000 : seven_segment.value.eq(self.values[5]),
-            # [...]
+            1 << i: seven_segment.value.eq(self.values[i])
+            for i in range(digits)
         }
-        # -- TO BE COMPLETED --
+
         # Combinatorial assigment
         self.comb += Case(self.cs, cases)
 
@@ -129,10 +121,11 @@ if __name__ == '__main__':
 
     # SevenSegmentDisplay simulation
     print("SevenSegmentDisplay simulation")
-    dut = SevenSegmentDisplay(100e6, 0.000001)
+    digits = 6
+    dut = SevenSegmentDisplay(100e6, 0.000001, digits)
     def dut_tb(dut):
         for i in range(4096):
-            for j in range(6):
+            for j in range(digits):
                 yield dut.values[j].eq(i + j)
             yield
 
