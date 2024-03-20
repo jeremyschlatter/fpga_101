@@ -67,8 +67,7 @@ class Clock(Module):
     def __init__(self, led):
         # -- TO BE COMPLETED --
         # Tick generation : timebase
-        tick = Tick(Clock.sys_clk_freq, 1)
-        self.submodules += tick
+        self.submodules.tick = Tick(Clock.sys_clk_freq, 1)
 
         # SevenSegmentDisplay
 
@@ -100,7 +99,7 @@ class Clock(Module):
         # -- TO BE COMPLETED --
 
         self.sync += [
-            If(tick.ce, led.eq(~led)),
+            If(self.tick.ce, led.eq(~led)),
         ]
 
 module = Clock(platform.request("user_led"))
