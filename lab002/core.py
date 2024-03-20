@@ -72,27 +72,40 @@ class CoreFSM(Module):
 
         self.submodules.fsm = fsm = FSM(reset_state="IDLE")
 
-        # -- TO BE COMPLETED --
         fsm.act("IDLE",
             If(self.tick,
                 NextState("INC_SECONDS")
             ),
-
         )
 
         fsm.act("INC_SECONDS",
-		    NextValue(self.seconds, self.seconds + 1),
-			NextState("IDLE")
+            If(self.seconds == 59,
+                NextValue(self.seconds, 0),
+                NextState("INC_MINUTES"),
+            ).Else(
+                NextValue(self.seconds, self.seconds + 1),
+                NextState("IDLE"),
+            ),
         )
 
         fsm.act("INC_MINUTES",
-			NextState("IDLE")
+            If(self.minutes == 59,
+                NextValue(self.minutes, 0),
+                NextState("INC_HOURS"),
+            ).Else(
+                NextValue(self.minutes, self.minutes + 1),
+                NextState("IDLE"),
+            ),
         )
 
         fsm.act("INC_HOURS",
-           NextState("IDLE")
+            If(self.hours == 23,
+                NextValue(self.hours, 0),
+            ).Else(
+                NextValue(self.hours, self.hours + 1),
+            ),
+            NextState("IDLE")
         )
-		# -- TO BE COMPLETED --
 
 # Main ---------------------------------------------------------------------------------------------
 
@@ -100,8 +113,8 @@ if __name__ == '__main__':
     # Seven segment simulation
     print("Core simulation")
     # Uncomment the one you want to simulate
-    dut = Core()
-    #dut = CoreFSM()
+    # dut = Core()
+    dut = CoreFSM()
 
     def show_time(cycle, hours, minutes, seconds):
         print("cycle %d: hh:%02d, mm:%02d, ss:%02d" %(cycle, hours, minutes, seconds))
