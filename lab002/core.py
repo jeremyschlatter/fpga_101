@@ -34,13 +34,24 @@ class Core(Module):
 
         # Synchronous assigment
         self.sync += [
-            # -- TO BE COMPLETED --
             # At each tick
             If(self.tick,
-                self.seconds.eq(self.seconds + 1),
-                # [...]
-            )
-            # -- TO BE COMPLETED --
+                If(self.seconds == 59,
+                    self.seconds.eq(0),
+                    If(self.minutes == 59,
+                        self.minutes.eq(0),
+                        If(self.hours == 23,
+                            self.hours.eq(0),
+                        ).Else(
+                            self.hours.eq(self.hours + 1),
+                        ),
+                    ).Else(
+                        self.minutes.eq(self.minutes + 1),
+                    ),
+                ).Else(
+                    self.seconds.eq(self.seconds + 1),
+                ),
+            ),
         ]
 
 # CoreFSM ------------------------------------------------------------------------------------------
