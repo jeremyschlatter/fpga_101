@@ -21,12 +21,24 @@ class SevenSegment(Module):
         # Value to abcd segments dictionary.
         # Here we create a table to translate each of the 16 possible input
         # values to abdcefg segments control.
-        # -- TO BE COMPLETED --
         cases = {
           0x0: abcdefg.eq(0b0111111),
-          # [...]
+          0x1: abcdefg.eq(0b0000110),
+          0x2: abcdefg.eq(0b1011011),
+          0x3: abcdefg.eq(0b1001111),
+          0x4: abcdefg.eq(0b1100110),
+          0x5: abcdefg.eq(0b1101101),
+          0x6: abcdefg.eq(0b1111101),
+          0x7: abcdefg.eq(0b0000111),
+          0x8: abcdefg.eq(0b1111111),
+          0x9: abcdefg.eq(0b1101111),
+          0xa: abcdefg.eq(0b1110111),
+          0xb: abcdefg.eq(0b1111100),
+          0xc: abcdefg.eq(0b1011000),
+          0xd: abcdefg.eq(0b1011110),
+          0xe: abcdefg.eq(0b1111001),
+          0xf: abcdefg.eq(0b1110001),
         }
-        # -- TO BE COMPLETED --
 
         # Combinatorial assignement
         self.comb += Case(value, cases)
@@ -66,6 +78,7 @@ class SevenSegmentDisplay(Module):
             If(self.tick.ce,
                 # -- TO BE COMPLETED --
                 # [...] rotate cs
+                cs.eq((cs << 1) | (cs == 0b100000)),
                 # -- TO BE COMPLETED --
             )
         ]
@@ -78,6 +91,11 @@ class SevenSegmentDisplay(Module):
         # -- TO BE COMPLETED --
         cases = {
             0b000001 : seven_segment.value.eq(self.values[0]),
+            0b000010 : seven_segment.value.eq(self.values[1]),
+            0b000100 : seven_segment.value.eq(self.values[2]),
+            0b001000 : seven_segment.value.eq(self.values[3]),
+            0b010000 : seven_segment.value.eq(self.values[4]),
+            0b100000 : seven_segment.value.eq(self.values[5]),
             # [...]
         }
         # -- TO BE COMPLETED --
