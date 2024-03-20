@@ -25,8 +25,9 @@ _io = [
 
     ("cpu_reset", 0, Pins("C12"), IOStandard("LVCMOS33")),
 
-    ("display_cs_n",  0, Pins("J17", "J18", "T9", "J14", "P14", "T14", "K2", "U13"), IOStandard("LVCMOS33")),
-    ("display_abcdefg",  0, Pins("T10 R10 K16 K13 P15 T11 L18 H15"), IOStandard("LVCMOS33")),
+    ("display_cs_n",  0, Pins("J17 J18 T9 J14 P14 T14 K2 U13"), IOStandard("LVCMOS33")),
+    ("display_abcdefg",  0, Pins("T10 R10 K16 K13 P15 T11 L18"), IOStandard("LVCMOS33")),
+    ("display_dot", 0, Pins("H15"), IOStandard("LVCMOS33")),
 ]
 
 # Platform -----------------------------------------------------------------------------------------
@@ -64,7 +65,7 @@ platform = Platform()
 # Create our main module (fpga description)
 class Clock(Module):
     sys_clk_freq = int(100e6)
-    def __init__(self, led, disp_cs, disp_abcdefg):
+    def __init__(self, led, disp_cs, disp_abcdefg, disp_dot):
         # -- TO BE COMPLETED --
         # Tick generation : timebase
         self.submodules.tick = Tick(Clock.sys_clk_freq, 1)
@@ -84,9 +85,14 @@ class Clock(Module):
         # use the generated verilog file
 
         # combinatorial assignement
-        for (i, x) in enumerate(reversed([0xd, 0xe, 0xa, 0xd, 0xb, 0xe, 0xe, 0xf])):
+        for (i, x) in enumerate(reversed([3, 1, 4, 1, 5, 9, 2, 6])):
             self.comb += self.disp.values[i].eq(x)
         self.comb += [
+            If(self.disp.cs == (1 << 7),
+               disp_dot.eq(0),
+            ).Else(
+               disp_dot.eq(1),
+            ),
             disp_abcdefg.eq(~self.disp.abcdefg),
             disp_cs.eq(~self.disp.cs),
 
@@ -115,6 +121,7 @@ module = Clock(
     platform.request("user_led"),
     platform.request("display_cs_n"),
     platform.request("display_abcdefg"),
+    platform.request("display_dot"),
 )
 
 # Build --------------------------------------------------------------------------------------------
