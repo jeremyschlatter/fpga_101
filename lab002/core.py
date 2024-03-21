@@ -22,6 +22,7 @@ class Core(Module):
     def __init__(self, hours=0, minutes=0, seconds=0):
         # Module's interface
         self.tick = Signal() # input
+        self.centis  = Signal(7, reset=0)       # output
         self.seconds = Signal(6, reset=seconds) # output
         self.minutes = Signal(6, reset=minutes) # output
         self.hours   = Signal(5, reset=hours)   # output
@@ -36,21 +37,26 @@ class Core(Module):
         self.sync += [
             # At each tick
             If(self.tick,
-                If(self.seconds == 59,
-                    self.seconds.eq(0),
-                    If(self.minutes == 59,
-                        self.minutes.eq(0),
-                        If(self.hours == 23,
-                            self.hours.eq(0),
-                        ).Else(
-                            self.hours.eq(self.hours + 1),
-                        ),
-                    ).Else(
-                        self.minutes.eq(self.minutes + 1),
-                    ),
-                ).Else(
-                    self.seconds.eq(self.seconds + 1),
-                ),
+               If(self.centis == 99,
+                   self.centis.eq(0),
+                   If(self.seconds == 59,
+                       self.seconds.eq(0),
+                       If(self.minutes == 59,
+                           self.minutes.eq(0),
+                           If(self.hours == 23,
+                               self.hours.eq(0),
+                           ).Else(
+                               self.hours.eq(self.hours + 1),
+                           ),
+                       ).Else(
+                           self.minutes.eq(self.minutes + 1),
+                       ),
+                   ).Else(
+                       self.seconds.eq(self.seconds + 1),
+                   ),
+               ).Else(
+                   self.centis.eq(self.centis + 1),
+               ),
             ),
         ]
 
