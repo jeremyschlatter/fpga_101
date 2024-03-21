@@ -169,7 +169,9 @@ class Clock(Module):
                 1 << 4: minute_digit,
                 1 << 5: empty_digit,
                 1 << 6: hour_digit,
-                1 << 7: hour_digit,
+                1 << 7: If(self.hours.tens == 0,
+                           empty_digit,
+                        ).Else(hour_digit),
             }),
 
             disp_cs.eq(~self.disp.cs),
