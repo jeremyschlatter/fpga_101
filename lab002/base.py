@@ -16,12 +16,17 @@ from core import *
 # IOs ----------------------------------------------------------------------------------------------
 
 _io = [
-    ("user_led",  0, Pins("H17"), IOStandard("LVCMOS33")),
+    # ("user_led",  0, Pins("H17"), IOStandard("LVCMOS33")),
+    ("ca_led", 0, Pins("V11"), IOStandard("LVCMOS33")),
+    ("mo_led", 0, Pins("V16"), IOStandard("LVCMOS33")),
 
-    ("user_sw",  0, Pins("V10 U11 U12"), IOStandard("LVCMOS33")),
+    ("user_sw",  0, Pins("V10"), IOStandard("LVCMOS33")),
 
     ("user_btn_r", 0, Pins("M17"), IOStandard("LVCMOS33")),
     ("user_btn_l", 0, Pins("P17"), IOStandard("LVCMOS33")),
+    ("user_btn_u", 0, Pins("M18"), IOStandard("LVCMOS33")),
+    ("user_btn_d", 0, Pins("P18"), IOStandard("LVCMOS33")),
+    ("user_btn_c", 0, Pins("N17"), IOStandard("LVCMOS33")),
 
     ("clk100", 0, Pins("E3"), IOStandard("LVCMOS33")),
 
@@ -62,6 +67,24 @@ class UserButtonPress(Module):
             self.rising.eq(_user_btn & ~_user_btn_d)
         ]
 
+# Debouncing
+def debounce(mod, s):
+    counter = Signal(20, reset=1)
+    out = Signal()
+
+    mod.comb += out.eq(counter == 0)
+    mod.sync += [
+        If(counter == 1,
+            If(s, counter.eq(2)),
+        ).Elif(counter > 1,
+            counter.eq(counter + 1),
+        ).Else(
+            counter.eq(1),
+        ),
+    ]
+
+    return out
+
 # Create our platform (fpga interface)
 platform = Platform()
 
@@ -69,8 +92,8 @@ platform = Platform()
 class Clock(Module):
     sys_clk_freq = int(100e6)
     def __init__(
-            self, led, disp_cs, disp_abcdefg, disp_dot,
-            switch,
+            self, ca_led, mo_led, disp_cs, disp_abcdefg,
+            disp_dot, config, right, left, up, down, center,
         ):
         # -- TO BE COMPLETED --
         # Tick generation : timebase
@@ -99,6 +122,13 @@ class Clock(Module):
         self.submodules.seconds = BCD()
         # self.submodules.centis = BCD()
 
+        # Buttons.
+        self.submodules.left = UserButtonPress(left)
+        self.submodules.right = UserButtonPress(right)
+        self.submodules.up = UserButtonPress(up)
+        self.submodules.down = UserButtonPress(down)
+        self.submodules.center = UserButtonPress(center)
+
         # use the generated verilog file
         # no.
 
@@ -107,9 +137,20 @@ class Clock(Module):
         self.submodules.blink = Pulse(
                 Clock.sys_clk_freq, 1/1.5, 1/3)
 
+        missouri_time = Signal()
+        tz_hours = Signal(5)
+
         # combinatorial assignement
         self.comb += [
-            led.eq(self.blink.ce),
+            mo_led.eq(missouri_time),
+            ca_led.eq(~missouri_time),
+            If(missouri_time,
+                If(self.core.hours > 21,
+                    tz_hours.eq(self.core.hours - 22),
+                ).Else(tz_hours.eq(self.core.hours + 2))
+            ).Else(tz_hours.eq(self.core.hours)),
+            # led.eq(0),
+            # led.eq(self.blink.ce),
 
             # Connect tick to core (core timebase)
             self.core.tick.eq(self.tick.ce),
@@ -137,13 +178,13 @@ class Clock(Module):
 
             # Convert core hours to bcd and connect
             # to display
-            am_pm.eq(self.core.hours < 12),
-            If(self.core.hours == 0,
+            am_pm.eq(tz_hours < 12),
+            If(tz_hours == 0,
                self.hours.value.eq(12),
-            ).Elif(self.core.hours < 13,
-                   self.hours.value.eq(self.core.hours),
+            ).Elif(tz_hours < 13,
+                   self.hours.value.eq(tz_hours),
             ).Else(
-                self.hours.value.eq(self.core.hours - 12),
+                self.hours.value.eq(tz_hours - 12),
             ),
             self.disp.values[6].eq(self.hours.ones),
             self.disp.values[7].eq(self.hours.tens),
@@ -152,7 +193,7 @@ class Clock(Module):
         empty_digit = disp_abcdefg.eq(0b11111111)
         show_digit = disp_abcdefg.eq(~self.disp.abcdefg)
         def blink_if_switched(n):
-            return If(switch[n] & ~self.blink.ce,
+            return If(config & ~self.blink.ce,
                       empty_digit
                    ).Else(show_digit)
         hour_digit = blink_if_switched(0)
@@ -176,26 +217,41 @@ class Clock(Module):
 
             disp_cs.eq(~self.disp.cs),
 
-            # Indicate pm with a dot.
+            # Draw dots.
             Case(self.disp.cs, {
+                # Indicate pm with a dot.
                 1 << 0: disp_dot.eq(am_pm),
+                # 1 << 2: disp_dot.eq(0),
+                # 1 << 3: disp_dot.eq(0),
+                # 1 << 5: disp_dot.eq(0),
+                # 1 << 6: disp_dot.eq(0),
                 "default": disp_dot.eq(1),
             }),
 
         ]
         # -- TO BE COMPLETED --
 
-#         self.sync += [
-#             If(self.blink.ce, led.eq(~led)),
-#             If(self.blink.ce, blink.eq(~blink)),
-#         ]
+        center_pressed = debounce(self, self.center.rising)
+
+        self.sync += [
+            If(center_pressed, missouri_time.eq(~missouri_time)),
+            # If(self.center.rising, led.eq(~led)),
+            # If(self.blink.ce, led.eq(~led)),
+            # If(self.blink.ce, blink.eq(~blink)),
+        ]
 
 module = Clock(
-    platform.request("user_led"),
+    platform.request("ca_led"),
+    platform.request("mo_led"),
     platform.request("display_cs_n"),
     platform.request("display_abcdefg"),
     platform.request("display_dot"),
     platform.request("user_sw"),
+    platform.request("user_btn_r"),
+    platform.request("user_btn_l"),
+    platform.request("user_btn_u"),
+    platform.request("user_btn_d"),
+    platform.request("user_btn_c"),
 )
 
 # Build --------------------------------------------------------------------------------------------
