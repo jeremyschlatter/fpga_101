@@ -94,7 +94,7 @@ class Clock(Module):
         self.submodules.hours = BCD()
         self.submodules.minutes = BCD()
         self.submodules.seconds = BCD()
-        self.submodules.centis = BCD()
+        # self.submodules.centis = BCD()
 
         # use the generated verilog file
         # no.
@@ -108,23 +108,23 @@ class Clock(Module):
             # Set minutes/hours
             # ?
 
-            # Convert core seconds to bcd and connect
-            # to display
-            self.centis.value.eq(self.core.centis),
-            self.disp.values[0].eq(self.centis.ones),
-            self.disp.values[1].eq(self.centis.tens),
+#             # Convert core seconds to bcd and connect
+#             # to display
+#             self.centis.value.eq(self.core.centis),
+#             self.disp.values[0].eq(self.centis.ones),
+#             self.disp.values[1].eq(self.centis.tens),
 
             # Convert core seconds to bcd and connect
             # to display
             self.seconds.value.eq(self.core.seconds),
-            self.disp.values[2].eq(self.seconds.ones),
-            self.disp.values[3].eq(self.seconds.tens),
+            self.disp.values[0].eq(self.seconds.ones),
+            self.disp.values[1].eq(self.seconds.tens),
 
             # Convert core minutes to bcd and connect
             # to display
             self.minutes.value.eq(self.core.minutes),
-            self.disp.values[4].eq(self.minutes.ones),
-            self.disp.values[5].eq(self.minutes.tens),
+            self.disp.values[3].eq(self.minutes.ones),
+            self.disp.values[4].eq(self.minutes.tens),
 
             # Convert core hours to bcd and connect
             # to display
@@ -136,9 +136,9 @@ class Clock(Module):
             # disp_abcdefg.eq(~self.disp.abcdefg),
 
             Case(self.disp.cs, {
-                # Empty final digit
-                1 << 0: disp_abcdefg.eq(0b11111111),
-#                 1 << 1: disp_abcdefg.eq(0b11111111),
+                # Empty digits
+                1 << 2: disp_abcdefg.eq(0b11111111),
+                1 << 5: disp_abcdefg.eq(0b11111111),
                 "default": disp_abcdefg.eq(~self.disp.abcdefg),
             }),
 
@@ -146,12 +146,15 @@ class Clock(Module):
 
             # Display dots to separate hours, minutes,
             # and seconds.
-            Case(self.disp.cs, {
-                1 << 6: disp_dot.eq(0),
-                1 << 4: disp_dot.eq(0),
-                1 << 2: disp_dot.eq(0),
-                "default": disp_dot.eq(1),
-            }),
+            disp_dot.eq(1),
+
+#             Case(self.disp.cs, {
+#                 1 << 6: disp_dot.eq(0),
+#                 1 << 4: disp_dot.eq(0),
+#                 1 << 2: disp_dot.eq(0),
+#                 "default": disp_dot.eq(1),
+#             }),
+
         ]
         # -- TO BE COMPLETED --
 
