@@ -99,6 +99,8 @@ class Clock(Module):
         # use the generated verilog file
         # no.
 
+        am_pm = Signal()
+
         # combinatorial assignement
         self.comb += [
 
@@ -128,7 +130,13 @@ class Clock(Module):
 
             # Convert core hours to bcd and connect
             # to display
-            self.hours.value.eq(self.core.hours),
+            If(self.core.hours > 12,
+                self.hours.value.eq(self.core.hours - 12),
+                am_pm.eq(0),
+            ).Else(
+                self.hours.value.eq(self.core.hours),
+                am_pm.eq(1),
+            ),
             self.disp.values[6].eq(self.hours.ones),
             self.disp.values[7].eq(self.hours.tens),
 
@@ -148,12 +156,10 @@ class Clock(Module):
             # and seconds.
             disp_dot.eq(1),
 
-#             Case(self.disp.cs, {
-#                 1 << 6: disp_dot.eq(0),
-#                 1 << 4: disp_dot.eq(0),
-#                 1 << 2: disp_dot.eq(0),
-#                 "default": disp_dot.eq(1),
-#             }),
+            Case(self.disp.cs, {
+                1 << 0: disp_dot.eq(am_pm),
+                "default": disp_dot.eq(1),
+            }),
 
         ]
         # -- TO BE COMPLETED --
