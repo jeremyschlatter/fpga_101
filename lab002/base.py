@@ -18,7 +18,7 @@ from core import *
 _io = [
     # ("user_led",  0, Pins("H17"), IOStandard("LVCMOS33")),
     ("ca_led", 0, Pins("V11"), IOStandard("LVCMOS33")),
-    ("mo_led", 0, Pins("V16"), IOStandard("LVCMOS33")),
+    ("mo_led", 0, Pins("U16"), IOStandard("LVCMOS33")),
 
     ("user_sw",  0, Pins("V10"), IOStandard("LVCMOS33")),
 
