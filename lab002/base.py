@@ -73,6 +73,8 @@ class Clock(Module):
         # SevenSegmentDisplay
         self.submodules.disp = SevenSegmentDisplay(
             Clock.sys_clk_freq,
+            cs_period=(1/40),
+            # cs_period=0.5,
             digits=8,
         )
 
@@ -81,6 +83,7 @@ class Clock(Module):
         # set mm/hh
 
         # Binary Coded Decimal: convert ss/mm/hh to decimal values
+        # self.submodules.bcd = BCD()
 
         # use the generated verilog file
 

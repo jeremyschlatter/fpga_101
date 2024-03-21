@@ -70,15 +70,19 @@ class _BCD(Module):
 class BCD(Module):
     def __init__(self):
         # -- TO BE COMPLETED --
-        self.my_input  = Signal()  # input
-        self.my_output = Signal()  # output
+        self.value    = Signal(8)  # input
+        self.hundreds = Signal(4)  # output
+        self.tens     = Signal(4)  # output
+        self.ones     = Signal(4)  # output
 
         # # #
 
         # Instance of the BCD migen module
         self.specials += Instance("bcd",
-            i_my_input=self.my_input,
-            o_my_output=self.my_output)
+            i_value=self.value,
+            o_hundreds=self.hundreds,
+            o_tens=self.tens,
+            o_ones=self.ones)
 
         # -- TO BE COMPLETED --
 
@@ -94,10 +98,10 @@ if __name__ == '__main__':
 
     def dut_tb(dut):
         for i in range(256):
-            # -- TO BE COMPLETED --
-            # [...] Stimulate design to verify that BCD module is working
-            # -- TO BE COMPLETED --
+            # Stimulate design to verify that BCD module is working
+            yield dut.value.eq(i)
             yield
+            show_bcd(i, (yield dut.hundreds), (yield dut.tens), (yield dut.ones))
 
     run_simulation(dut, dut_tb(dut), vcd_name="bcd.vcd")
 
