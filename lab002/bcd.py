@@ -3,9 +3,9 @@ from migen.fhdl import verilog
 
 # https://en.wikipedia.org/wiki/Double_dabble
 
-# _BCD ---------------------------------------------------------------------------------------------
+# BCD ---------------------------------------------------------------------------------------------
 
-class _BCD(Module):
+class BCD(Module):
     def __init__(self):
         # Module's interface
         self.value    = Signal(8)  # input
@@ -65,9 +65,9 @@ class _BCD(Module):
             self.ones.eq(ones)
         ]
 
-# BCD ----------------------------------------------------------------------------------------------
+# V_BCD ----------------------------------------------------------------------------------------------
 
-class BCD(Module):
+class V_BCD(Module):
     def __init__(self):
         # -- TO BE COMPLETED --
         self.value    = Signal(8)  # input
@@ -91,7 +91,7 @@ class BCD(Module):
 if __name__ == '__main__':
     # BCD simulation
     print("BCD simulation")
-    dut = _BCD()
+    dut = BCD()
 
     def show_bcd(value, hundreds, tens, ones):
         print("value: %03d hundreds: %02d tens:%02d ones:%02d" %(value, hundreds, tens, ones))
@@ -107,7 +107,7 @@ if __name__ == '__main__':
 
     # BCD verilog generation
     print("BCD verilog generation")
-    module = _BCD()
+    module = BCD()
     ios = {module.value, module.hundreds, module.tens, module.ones}
     f = open("bcd.v", "w")
     f.write(verilog.convert(module, ios, name="bcd").main_source)

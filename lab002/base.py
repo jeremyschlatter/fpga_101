@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+import time
+
 from migen import *
 from migen.genlib.cdc import MultiReg
 
@@ -25,6 +27,7 @@ _io = [
 
     ("cpu_reset", 0, Pins("C12"), IOStandard("LVCMOS33")),
 
+    # ("display_cs_n",  0, Pins("T9 J14 P14 T14 K2 U13"), IOStandard("LVCMOS33")),
     ("display_cs_n",  0, Pins("J17 J18 T9 J14 P14 T14 K2 U13"), IOStandard("LVCMOS33")),
     ("display_abcdefg",  0, Pins("T10 R10 K16 K13 P15 T11 L18"), IOStandard("LVCMOS33")),
     ("display_dot", 0, Pins("H15"), IOStandard("LVCMOS33")),
@@ -73,46 +76,71 @@ class Clock(Module):
         # SevenSegmentDisplay
         self.submodules.disp = SevenSegmentDisplay(
             Clock.sys_clk_freq,
-            cs_period=(1/40),
+            # cs_period=(1/40),
             # cs_period=0.5,
             digits=8,
         )
 
         # Core : counts ss/mm/hh
-
-        # set mm/hh
+        now = time.localtime()
+        self.submodules.core = Core(
+            # set mm/hh
+            hours=now.tm_hour,
+            minutes=now.tm_min + 1,
+            seconds=now.tm_sec,
+        )
 
         # Binary Coded Decimal: convert ss/mm/hh to decimal values
-        # self.submodules.bcd = BCD()
+        self.submodules.hours = BCD()
+        self.submodules.minutes = BCD()
+        self.submodules.seconds = BCD()
 
         # use the generated verilog file
+        # no.
 
         # combinatorial assignement
-        for (i, x) in enumerate(reversed([3, 1, 4, 1, 5, 9, 2, 6])):
-            self.comb += self.disp.values[i].eq(x)
         self.comb += [
-            If(self.disp.cs == (1 << 7),
-               disp_dot.eq(0),
-            ).Else(
-               disp_dot.eq(1),
-            ),
-            disp_abcdefg.eq(~self.disp.abcdefg),
-            disp_cs.eq(~self.disp.cs),
 
             # Connect tick to core (core timebase)
+            self.core.tick.eq(self.tick.ce),
 
             # Set minutes/hours
+            # ?
 
             # Convert core seconds to bcd and connect
             # to display
+            self.seconds.value.eq(self.core.seconds),
+            self.disp.values[2].eq(self.seconds.ones),
+            self.disp.values[3].eq(self.seconds.tens),
 
             # Convert core minutes to bcd and connect
             # to display
+            self.minutes.value.eq(self.core.minutes),
+            self.disp.values[4].eq(self.minutes.ones),
+            self.disp.values[5].eq(self.minutes.tens),
 
             # Convert core hours to bcd and connect
             # to display
+            self.hours.value.eq(self.core.hours),
+            self.disp.values[6].eq(self.hours.ones),
+            self.disp.values[7].eq(self.hours.tens),
 
             # Connect display to pads
+            Case(self.disp.cs, {
+                # Empty final two digits
+                1 << 0: disp_abcdefg.eq(0b11111111),
+                1 << 1: disp_abcdefg.eq(0b11111111),
+                "default": disp_abcdefg.eq(~self.disp.abcdefg),
+            }),
+            disp_cs.eq(~self.disp.cs),
+
+            # Display dots to separate hours, minutes,
+            # and seconds.
+            Case(self.disp.cs, {
+                1 << 6: disp_dot.eq(0),
+                1 << 4: disp_dot.eq(0),
+                "default": disp_dot.eq(1),
+            }),
         ]
         # -- TO BE COMPLETED --
 

@@ -19,12 +19,12 @@ from migen import *
 # Core ---------------------------------------------------------------------------------------------
 
 class Core(Module):
-    def __init__(self):
+    def __init__(self, hours=0, minutes=0, seconds=0):
         # Module's interface
-        self.tick = Signal()     # input
-        self.seconds = Signal(6) # output
-        self.minutes = Signal(6) # output
-        self.hours = Signal(5)   # output
+        self.tick = Signal() # input
+        self.seconds = Signal(6, reset=seconds) # output
+        self.minutes = Signal(6, reset=minutes) # output
+        self.hours   = Signal(5, reset=hours)   # output
 
         # Set interface
         self.inc_minutes = Signal() # input
