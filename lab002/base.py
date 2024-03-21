@@ -137,12 +137,13 @@ class Clock(Module):
 
             # Convert core hours to bcd and connect
             # to display
-            If(self.core.hours > 12,
-                self.hours.value.eq(self.core.hours - 12),
-                am_pm.eq(0),
+            am_pm.eq(self.core.hours < 12),
+            If(self.core.hours == 0,
+               self.hours.value.eq(12),
+            ).Elif(self.core.hours < 13,
+                   self.hours.value.eq(self.core.hours),
             ).Else(
-                self.hours.value.eq(self.core.hours),
-                am_pm.eq(1),
+                self.hours.value.eq(self.core.hours - 12),
             ),
             self.disp.values[6].eq(self.hours.ones),
             self.disp.values[7].eq(self.hours.tens),
