@@ -18,7 +18,7 @@ from core import *
 _io = [
     ("user_led",  0, Pins("H17"), IOStandard("LVCMOS33")),
 
-    ("user_sw",  0, Pins("J15"), IOStandard("LVCMOS33")),
+    ("user_sw",  0, Pins("V10 U11 U12"), IOStandard("LVCMOS33")),
 
     ("user_btn_r", 0, Pins("M17"), IOStandard("LVCMOS33")),
     ("user_btn_l", 0, Pins("P17"), IOStandard("LVCMOS33")),
@@ -68,7 +68,10 @@ platform = Platform()
 # Create our main module (fpga description)
 class Clock(Module):
     sys_clk_freq = int(100e6)
-    def __init__(self, led, disp_cs, disp_abcdefg, disp_dot):
+    def __init__(
+            self, led, disp_cs, disp_abcdefg, disp_dot,
+            switch,
+        ):
         # -- TO BE COMPLETED --
         # Tick generation : timebase
         self.submodules.tick = Tick(Clock.sys_clk_freq, 0.01)
@@ -101,8 +104,12 @@ class Clock(Module):
 
         am_pm = Signal()
 
+        self.submodules.blink = Pulse(
+                Clock.sys_clk_freq, 1/1.5, 1/3)
+
         # combinatorial assignement
         self.comb += [
+            led.eq(self.blink.ce),
 
             # Connect tick to core (core timebase)
             self.core.tick.eq(self.tick.ce),
@@ -139,23 +146,34 @@ class Clock(Module):
             ),
             self.disp.values[6].eq(self.hours.ones),
             self.disp.values[7].eq(self.hours.tens),
+        ]
 
+        empty_digit = disp_abcdefg.eq(0b11111111)
+        show_digit = disp_abcdefg.eq(~self.disp.abcdefg)
+        def blink_if_switched(n):
+            return If(switch[n] & ~self.blink.ce,
+                      empty_digit
+                   ).Else(show_digit)
+        hour_digit = blink_if_switched(0)
+        minute_digit = blink_if_switched(1)
+        second_digit = blink_if_switched(2)
+
+        self.comb += [
             # Connect display to pads
-            # disp_abcdefg.eq(~self.disp.abcdefg),
-
             Case(self.disp.cs, {
-                # Empty digits
-                1 << 2: disp_abcdefg.eq(0b11111111),
-                1 << 5: disp_abcdefg.eq(0b11111111),
-                "default": disp_abcdefg.eq(~self.disp.abcdefg),
+                1 << 0: second_digit,
+                1 << 1: second_digit,
+                1 << 2: empty_digit,
+                1 << 3: minute_digit,
+                1 << 4: minute_digit,
+                1 << 5: empty_digit,
+                1 << 6: hour_digit,
+                1 << 7: hour_digit,
             }),
 
             disp_cs.eq(~self.disp.cs),
 
-            # Display dots to separate hours, minutes,
-            # and seconds.
-            disp_dot.eq(1),
-
+            # Indicate pm with a dot.
             Case(self.disp.cs, {
                 1 << 0: disp_dot.eq(am_pm),
                 "default": disp_dot.eq(1),
@@ -164,15 +182,17 @@ class Clock(Module):
         ]
         # -- TO BE COMPLETED --
 
-        self.sync += [
-            If(self.tick.ce, led.eq(~led)),
-        ]
+#         self.sync += [
+#             If(self.blink.ce, led.eq(~led)),
+#             If(self.blink.ce, blink.eq(~blink)),
+#         ]
 
 module = Clock(
     platform.request("user_led"),
     platform.request("display_cs_n"),
     platform.request("display_abcdefg"),
     platform.request("display_dot"),
+    platform.request("user_sw"),
 )
 
 # Build --------------------------------------------------------------------------------------------
