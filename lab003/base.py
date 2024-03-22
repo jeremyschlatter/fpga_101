@@ -115,7 +115,7 @@ class BaseSoC(SoCMini):
 
         # No CPU, use Serial to control Wishbone bus
         self.submodules.serial_bridge = UARTWishboneBridge(platform.request("serial"), sys_clk_freq)
-        self.add_wb_master(self.serial_bridge.wishbone)
+        self.bus.add_master(master=self.serial_bridge.wishbone)
 
         # FPGA identification
         self.submodules.dna = dna.DNA()
