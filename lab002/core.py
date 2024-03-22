@@ -1,3 +1,5 @@
+from functools import cache
+
 from migen import *
 
 # Goals:
@@ -22,42 +24,43 @@ class Core(Module):
     def __init__(self, hours=0, minutes=0, seconds=0):
         # Module's interface
         self.tick = Signal() # input
-        self.centis  = Signal(7, reset=0)       # output
         self.seconds = Signal(6, reset=seconds) # output
         self.minutes = Signal(6, reset=minutes) # output
         self.hours   = Signal(5, reset=hours)   # output
 
-        # Set interface
-        self.inc_minutes = Signal() # input
-        self.inc_hours = Signal()   # output
+        # Inputs to edit time
+        self.inc_minutes = Signal()
+        self.dec_minutes = Signal()
+        self.inc_hours = Signal()
+        self.dec_hours = Signal()
 
         # # #
 
-        # Synchronous assigment
+        @cache
+        def delta(unit, d):
+            (rollover, carry) = {
+                self.hours: (24, None),
+                self.minutes: (60, self.hours),
+                self.seconds: (60, self.minutes),
+            }[unit]
+            roll_from, roll_to = rollover - 1, 0
+            if d == -1:
+                roll_from, roll_to = roll_to, roll_from
+            if carry is not None:
+                carry = delta(carry, d)
+            return If(unit == roll_from, *(
+                       [unit.eq(roll_to)] + (
+                           [carry] if carry else []
+                   ))).Else(unit.eq(unit + d))
+
         self.sync += [
-            # At each tick
-            If(self.tick,
-               If(self.centis == 99,
-                   self.centis.eq(0),
-                   If(self.seconds == 59,
-                       self.seconds.eq(0),
-                       If(self.minutes == 59,
-                           self.minutes.eq(0),
-                           If(self.hours == 23,
-                               self.hours.eq(0),
-                           ).Else(
-                               self.hours.eq(self.hours + 1),
-                           ),
-                       ).Else(
-                           self.minutes.eq(self.minutes + 1),
-                       ),
-                   ).Else(
-                       self.seconds.eq(self.seconds + 1),
-                   ),
-               ).Else(
-                   self.centis.eq(self.centis + 1),
-               ),
+            If(~self.tick,
+                If(self.inc_hours, delta(self.hours, 1)),
+                If(self.dec_hours, delta(self.hours, -1)),
+                If(self.inc_minutes, delta(self.minutes, 1)),
+                If(self.dec_minutes, delta(self.minutes, -1)),
             ),
+            If(self.tick, delta(self.seconds, 1)),
         ]
 
 # CoreFSM ------------------------------------------------------------------------------------------

@@ -20,7 +20,7 @@ _io = [
     ("ca_led", 0, Pins("V11"), IOStandard("LVCMOS33")),
     ("mo_led", 0, Pins("U16"), IOStandard("LVCMOS33")),
 
-    ("user_sw",  0, Pins("V10"), IOStandard("LVCMOS33")),
+    ("user_sw",  0, Pins("J15"), IOStandard("LVCMOS33")),
 
     ("user_btn_r", 0, Pins("M17"), IOStandard("LVCMOS33")),
     ("user_btn_l", 0, Pins("P17"), IOStandard("LVCMOS33")),
@@ -52,7 +52,9 @@ class Platform(XilinxPlatform):
 # User button detection
 class UserButtonPress(Module):
     def __init__(self, user_btn):
-        self.rising = Signal()
+        rising = Signal()
+
+        self.pressed = debounce(self, rising)
 
         # # #
 
@@ -64,7 +66,7 @@ class UserButtonPress(Module):
         # detect rising edge
         self.sync += [
             _user_btn_d.eq(user_btn),
-            self.rising.eq(_user_btn & ~_user_btn_d)
+            rising.eq(_user_btn & ~_user_btn_d)
         ]
 
 # Debouncing
@@ -97,7 +99,7 @@ class Clock(Module):
         ):
         # -- TO BE COMPLETED --
         # Tick generation : timebase
-        self.submodules.tick = Tick(Clock.sys_clk_freq, 0.01)
+        self.submodules.tick = Tick(Clock.sys_clk_freq, 1)
 
         # SevenSegmentDisplay
         self.submodules.disp = SevenSegmentDisplay(
@@ -192,13 +194,13 @@ class Clock(Module):
 
         empty_digit = disp_abcdefg.eq(0b11111111)
         show_digit = disp_abcdefg.eq(~self.disp.abcdefg)
-        def blink_if_switched(n):
-            return If(config & ~self.blink.ce,
-                      empty_digit
-                   ).Else(show_digit)
-        hour_digit = blink_if_switched(0)
-        minute_digit = blink_if_switched(1)
-        second_digit = blink_if_switched(2)
+        blink_if_switched = (
+            If(config & ~self.blink.ce,
+                empty_digit
+            ).Else(show_digit))
+        hour_digit = blink_if_switched
+        minute_digit = blink_if_switched
+        second_digit = blink_if_switched
 
         self.comb += [
             # Connect display to pads
@@ -228,13 +230,18 @@ class Clock(Module):
                 "default": disp_dot.eq(1),
             }),
 
+            self.core.inc_hours.eq(config & self.up.pressed),
+            self.core.dec_hours.eq(config & self.down.pressed),
+            self.core.inc_minutes.eq(config & self.right.pressed),
+            self.core.dec_minutes.eq(config & self.left.pressed),
+
         ]
         # -- TO BE COMPLETED --
 
-        center_pressed = debounce(self, self.center.rising)
+        # center_pressed = debounce(self, self.center.rising)
 
         self.sync += [
-            If(center_pressed, missouri_time.eq(~missouri_time)),
+            If(self.center.pressed, missouri_time.eq(~missouri_time)),
             # If(self.center.rising, led.eq(~led)),
             # If(self.blink.ce, led.eq(~led)),
             # If(self.blink.ce, blink.eq(~blink)),
