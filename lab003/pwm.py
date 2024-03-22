@@ -25,13 +25,13 @@ class _PWM(Module, AutoCSR):
             If(enable,
                 # If count < width, set pwm to 1
                 # Else 0
-                # TO BE COMPLETED
-                # [...]
-                # TO BE COMPLETED
+                If(count < self.width,
+                    pwm.eq(1)
+                ).Else(pwm.eq(0)),
                 # If count reach period, set count to 0
-                # TO BE COMPLETED
-                # [...]
-                # TO BE COMPLETED
+                If(count == period - 1,
+                    count.eq(0)
+                ).Else(count.eq(count + 1)),
             ).Else(
                 count.eq(0),
                 pwm.eq(0)
