@@ -2,7 +2,7 @@ import time
 
 import client
 
-with client.connect() as wb:
+with client.connect_ctx() as wb:
     i = 0
     delta = 1
     while True:
