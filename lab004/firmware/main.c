@@ -73,6 +73,7 @@ static void help(void)
 	puts("reboot                          - reboot CPU");
 	puts("display                         - display test");
 	puts("led                             - led test");
+	puts("switches                        - switches test");
 }
 
 static void reboot(void)
@@ -101,6 +102,11 @@ static void led_test(void)
 	}
 }
 
+static void switches_test(void)
+{
+	leds_out_write(switches_in_read());
+}
+
 static void console_service(void)
 {
 	char *str;
@@ -117,6 +123,8 @@ static void console_service(void)
 		display_test();
 	else if(strcmp(token, "led") == 0)
 		led_test();
+	else if (strcmp(token, "switches") == 0)
+		switches_test();
 	prompt();
 }
 
