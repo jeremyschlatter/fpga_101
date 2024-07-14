@@ -110,8 +110,11 @@ class BaseSoC(SoCCore):
         # SoC with CPU
         SoCCore.__init__(self, platform,
             cpu_type                 = "vexriscv",
+            # cpu_variant              = "standard+debug",
+            # uart_name                = "crossover",
+            # with_uartbone            = True,
             clk_freq                 = 100e6,
-            ident                    = "LiteX CPU Test SoC", ident_version=True,
+            ident                    = "Jeremy's LiteX CPU Test SoC", ident_version=True,
             integrated_rom_size      = 0x8000,
             integrated_main_ram_size = 0x4000)
 
