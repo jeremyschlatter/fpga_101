@@ -121,6 +121,10 @@ static void knight_rider(void)
 			delta = -delta;
 		}
 		busy_wait(20);
+		if (readchar_nonblock()) {
+			getchar();
+			break;
+		}
 	}
 }
 
