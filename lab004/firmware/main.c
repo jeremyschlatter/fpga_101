@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include <irq.h>
 #include <uart.h>
@@ -74,6 +75,7 @@ static void help(void)
 	puts("display                         - display test");
 	puts("led                             - led test");
 	puts("switches                        - switches test");
+	puts("ride                            - knight rider animation");
 }
 
 static void reboot(void)
@@ -107,6 +109,21 @@ static void switches_test(void)
 	leds_out_write(switches_in_read());
 }
 
+static void knight_rider(void)
+{
+	int i = 0;
+	int delta = 1;
+
+	while (true) {
+		leds_out_write(1 << i);
+		i += delta;
+		if (i == 15 || i == 0) {
+			delta = -delta;
+		}
+		busy_wait(20);
+	}
+}
+
 static void console_service(void)
 {
 	char *str;
@@ -125,6 +142,8 @@ static void console_service(void)
 		led_test();
 	else if (strcmp(token, "switches") == 0)
 		switches_test();
+	else if (strcmp(token, "ride") == 0)
+		knight_rider();
 	prompt();
 }
 
